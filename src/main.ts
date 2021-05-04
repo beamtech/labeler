@@ -8,12 +8,23 @@ interface MatchConfig {
   any?: string[];
 }
 
+type RemoteRepoDetails = {
+  repoName?: string;
+  repoOwner?: string;
+  repoRef?: string;
+};
+
 type StringOrMatchConfig = string | MatchConfig;
 
 async function run() {
   try {
     const token = core.getInput("repo-token", { required: true });
     const configPath = core.getInput("configuration-path", { required: true });
+    const sharedConfigurations = JSON.parse(
+      core.getInput("shared-configurations", {
+        required: true,
+      })
+    );
     const syncLabels = !!core.getInput("sync-labels", { required: false });
 
     const prNumber = getPrNumber();
@@ -32,9 +43,32 @@ async function run() {
 
     core.debug(`fetching changed files for pr #${prNumber}`);
     const changedFiles: string[] = await getChangedFiles(client, prNumber);
-    const labelGlobs: Map<string, StringOrMatchConfig[]> = await getLabelGlobs(
-      client,
-      configPath
+    const localLabelGlobs: Map<
+      string,
+      StringOrMatchConfig[]
+    > = await getLabelGlobs(client, configPath);
+    const sharedConfigGlobs: Map<
+      string,
+      StringOrMatchConfig[]
+    >[] = await Promise.all(
+      sharedConfigurations.map((config) => {
+        const [, repoOwner, repoName, repoPath] = config.match(
+          /([^/]+)\/([^/]+)\/?(.*)?@/
+        );
+        const [, repoRef] = config.match("@(.*)");
+        return getLabelGlobs(client, repoPath, {
+          repoOwner,
+          repoName,
+          repoRef,
+        });
+      })
+    );
+
+    const labelGlobs: Map<string, StringOrMatchConfig[]> = new Map(
+      [localLabelGlobs, ...sharedConfigGlobs].reduce(
+        (acc, m) => [...acc, ...m],
+        [] as [string, StringOrMatchConfig[]][]
+      )
     );
 
     const labels: string[] = [];
@@ -93,11 +127,13 @@ async function getChangedFiles(
 
 async function getLabelGlobs(
   client: github.GitHub,
-  configurationPath: string
+  configurationPath: string,
+  remoteRepoDetails?: RemoteRepoDetails
 ): Promise<Map<string, StringOrMatchConfig[]>> {
   const configurationContent: string = await fetchContent(
     client,
-    configurationPath
+    configurationPath,
+    remoteRepoDetails
   );
 
   // loads (hopefully) a `{[label:string]: string | StringOrMatchConfig[]}`, but is `any`:
@@ -109,13 +145,18 @@ async function getLabelGlobs(
 
 async function fetchContent(
   client: github.GitHub,
-  repoPath: string
+  repoPath: string,
+  {
+    repoName = github.context.repo.repo,
+    repoOwner = github.context.repo.owner,
+    repoRef = github.context.sha,
+  }: RemoteRepoDetails = {}
 ): Promise<string> {
   const response: any = await client.repos.getContents({
-    owner: github.context.repo.owner,
-    repo: github.context.repo.repo,
+    owner: repoOwner,
+    repo: repoName,
     path: repoPath,
-    ref: github.context.sha
+    ref: repoRef,
   });
 
   return Buffer.from(response.data.content, response.data.encoding).toString();

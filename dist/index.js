@@ -14559,6 +14559,7 @@ function run() {
             const localLabelGlobs = yield getLabelGlobs(client, configPath);
             const sharedConfigGlobs = yield Promise.all(sharedConfigurations.map((config) => {
                 const [, repoOwner, repoName, repoPath] = config.match(/([^/]+)\/([^/]+)\/?(.*)?@/);
+                console.log({ repoOwner, repoName, repoPath });
                 const [, repoRef] = config.match("@(.*)");
                 return getLabelGlobs(client, repoPath, {
                     repoOwner,
@@ -14566,6 +14567,7 @@ function run() {
                     repoRef,
                 });
             }));
+            console.log(sharedConfigGlobs);
             const labelGlobs = new Map([localLabelGlobs, ...sharedConfigGlobs].reduce((acc, m) => [...acc, ...m], []));
             console.log(labelGlobs);
             const labels = [];

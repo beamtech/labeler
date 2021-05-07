@@ -55,6 +55,7 @@ async function run() {
         const [, repoOwner, repoName, repoPath] = config.match(
           /([^/]+)\/([^/]+)\/?(.*)?@/
         );
+        console.log({ repoOwner, repoName, repoPath });
         const [, repoRef] = config.match("@(.*)");
         return getLabelGlobs(client, repoPath, {
           repoOwner,
@@ -63,6 +64,7 @@ async function run() {
         });
       })
     );
+    console.log(sharedConfigGlobs);
 
     const labelGlobs: Map<string, StringOrMatchConfig[]> = new Map(
       [localLabelGlobs, ...sharedConfigGlobs].reduce(

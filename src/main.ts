@@ -38,7 +38,7 @@ async function run() {
     const { data: pullRequest } = await client.pulls.get({
       owner: github.context.repo.owner,
       repo: github.context.repo.repo,
-      pull_number: prNumber
+      pull_number: prNumber,
     });
 
     core.debug(`fetching changed files for pr #${prNumber}`);
@@ -70,6 +70,7 @@ async function run() {
         [] as [string, StringOrMatchConfig[]][]
       )
     );
+    console.log(labelGlobs);
 
     const labels: string[] = [];
     const labelsToRemove: string[] = [];
@@ -77,7 +78,7 @@ async function run() {
       core.debug(`processing ${label}`);
       if (checkGlobs(changedFiles, globs)) {
         labels.push(label);
-      } else if (pullRequest.labels.find(l => l.name === label)) {
+      } else if (pullRequest.labels.find((l) => l.name === label)) {
         labelsToRemove.push(label);
       }
     }
@@ -111,11 +112,11 @@ async function getChangedFiles(
   const listFilesOptions = client.pulls.listFiles.endpoint.merge({
     owner: github.context.repo.owner,
     repo: github.context.repo.repo,
-    pull_number: prNumber
+    pull_number: prNumber,
   });
 
   const listFilesResponse = await client.paginate(listFilesOptions);
-  const changedFiles = listFilesResponse.map(f => f.filename);
+  const changedFiles = listFilesResponse.map((f) => f.filename);
 
   core.debug("found changed files:");
   for (const file of changedFiles) {
@@ -184,7 +185,7 @@ function getLabelGlobMapFromObject(
 function toMatchConfig(config: StringOrMatchConfig): MatchConfig {
   if (typeof config === "string") {
     return {
-      any: [config]
+      any: [config],
     };
   }
 
@@ -225,7 +226,7 @@ function isMatch(changedFile: string, matchers: IMinimatch[]): boolean {
 
 // equivalent to "Array.some()" but expanded for debugging and clarity
 function checkAny(changedFiles: string[], globs: string[]): boolean {
-  const matchers = globs.map(g => new Minimatch(g));
+  const matchers = globs.map((g) => new Minimatch(g));
   core.debug(`  checking "any" patterns`);
   for (const changedFile of changedFiles) {
     if (isMatch(changedFile, matchers)) {
@@ -240,7 +241,7 @@ function checkAny(changedFiles: string[], globs: string[]): boolean {
 
 // equivalent to "Array.every()" but expanded for debugging and clarity
 function checkAll(changedFiles: string[], globs: string[]): boolean {
-  const matchers = globs.map(g => new Minimatch(g));
+  const matchers = globs.map((g) => new Minimatch(g));
   core.debug(` checking "all" patterns`);
   for (const changedFile of changedFiles) {
     if (!isMatch(changedFile, matchers)) {
@@ -278,7 +279,7 @@ async function addLabels(
     owner: github.context.repo.owner,
     repo: github.context.repo.repo,
     issue_number: prNumber,
-    labels: labels
+    labels: labels,
   });
 }
 
@@ -288,12 +289,12 @@ async function removeLabels(
   labels: string[]
 ) {
   await Promise.all(
-    labels.map(label =>
+    labels.map((label) =>
       client.issues.removeLabel({
         owner: github.context.repo.owner,
         repo: github.context.repo.repo,
         issue_number: prNumber,
-        name: label
+        name: label,
       })
     )
   );

@@ -16,6 +16,8 @@ type RemoteRepoDetails = {
 
 type StringOrMatchConfig = string | MatchConfig;
 
+const uniq = (arr) => [...new Set(arr)];
+
 async function run() {
   try {
     const token = core.getInput("repo-token", { required: true });
@@ -55,7 +57,6 @@ async function run() {
         const [, repoOwner, repoName, repoPath] = config.match(
           /([^/]+)\/([^/]+)\/?(.*)?@/
         );
-        console.log({ repoOwner, repoName, repoPath });
         const [, repoRef] = config.match("@(.*)");
         return getLabelGlobs(client, repoPath, {
           repoOwner,
@@ -64,15 +65,22 @@ async function run() {
         });
       })
     );
-    console.log(sharedConfigGlobs);
+
+    const labelGlobEntries: [string, StringOrMatchConfig[]][] = Object.entries(
+      [localLabelGlobs, ...sharedConfigGlobs].reduce((acc, map) => {
+        const newAcc = { ...acc };
+        const entries = [...map];
+        entries.forEach(([k, v]) => {
+          if (!newAcc[k]) newAcc[k] = [];
+          newAcc[k] = [...newAcc[k], ...v];
+        });
+        return newAcc;
+      }, {})
+    );
 
     const labelGlobs: Map<string, StringOrMatchConfig[]> = new Map(
-      [localLabelGlobs, ...sharedConfigGlobs].reduce(
-        (acc, m) => [...acc, ...m],
-        [] as [string, StringOrMatchConfig[]][]
-      )
+      labelGlobEntries
     );
-    console.log(labelGlobs);
 
     const labels: string[] = [];
     const labelsToRemove: string[] = [];

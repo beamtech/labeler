@@ -14534,6 +14534,7 @@ const core = __importStar(__webpack_require__(186));
 const github = __importStar(__webpack_require__(438));
 const yaml = __importStar(__webpack_require__(917));
 const minimatch_1 = __webpack_require__(973);
+const uniq = (arr) => [...new Set(arr)];
 function run() {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -14559,7 +14560,6 @@ function run() {
             const localLabelGlobs = yield getLabelGlobs(client, configPath);
             const sharedConfigGlobs = yield Promise.all(sharedConfigurations.map((config) => {
                 const [, repoOwner, repoName, repoPath] = config.match(/([^/]+)\/([^/]+)\/?(.*)?@/);
-                console.log({ repoOwner, repoName, repoPath });
                 const [, repoRef] = config.match("@(.*)");
                 return getLabelGlobs(client, repoPath, {
                     repoOwner,
@@ -14567,9 +14567,17 @@ function run() {
                     repoRef,
                 });
             }));
-            console.log(sharedConfigGlobs);
-            const labelGlobs = new Map([localLabelGlobs, ...sharedConfigGlobs].reduce((acc, m) => [...acc, ...m], []));
-            console.log(labelGlobs);
+            const labelGlobEntries = Object.entries([localLabelGlobs, ...sharedConfigGlobs].reduce((acc, map) => {
+                const newAcc = Object.assign({}, acc);
+                const entries = [...map];
+                entries.forEach(([k, v]) => {
+                    if (!newAcc[k])
+                        newAcc[k] = [];
+                    newAcc[k] = [...newAcc[k], ...v];
+                });
+                return newAcc;
+            }, {}));
+            const labelGlobs = new Map(labelGlobEntries);
             const labels = [];
             const labelsToRemove = [];
             for (const [label, globs] of labelGlobs.entries()) {

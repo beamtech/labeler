@@ -19,8 +19,6 @@ type StringOrMatchConfig = string | MatchConfig;
 const uniq = (arr) => [...new Set(arr)];
 
 async function run() {
-  core.debug(`got this far`);
-  console.log("got this far regular log");
   try {
     const token = core.getInput("repo-token", { required: true });
     const sharedConfigsToken =
@@ -107,7 +105,6 @@ async function run() {
       await removeLabels(client, prNumber, labelsToRemove);
     }
   } catch (error) {
-    console.log("there was an error here");
     core.error(error);
     core.setFailed(error.message);
   }
@@ -170,12 +167,6 @@ async function fetchContent(
     repoRef = github.context.sha,
   }: RemoteRepoDetails = {}
 ): Promise<string> {
-  console.log("fetching", {
-    owner: repoOwner,
-    repo: repoName,
-    path: repoPath,
-    ref: repoRef,
-  });
   const response: any = await client.repos.getContents({
     owner: repoOwner,
     repo: repoName,

@@ -21,6 +21,7 @@ const uniq = (arr) => [...new Set(arr)];
 async function run() {
   try {
     const token = core.getInput("repo-token", { required: true });
+    const sharedConfigsToken = core.getInput("shared-configurations-token", { required: false }) || token;
     const configPath = core.getInput("configuration-path", { required: true });
     const sharedConfigurations = JSON.parse(
       core.getInput("shared-configurations", {
@@ -36,6 +37,7 @@ async function run() {
     }
 
     const client = new github.GitHub(token);
+    const sharedConfigsClient = new github.GitHub(sharedConfigsToken);
 
     const { data: pullRequest } = await client.pulls.get({
       owner: github.context.repo.owner,
@@ -58,7 +60,7 @@ async function run() {
           /([^/]+)\/([^/]+)\/?(.*)?@/
         );
         const [, repoRef] = config.match("@(.*)");
-        return getLabelGlobs(client, repoPath, {
+        return getLabelGlobs(sharedConfigsClient, repoPath, {
           repoOwner,
           repoName,
           repoRef,

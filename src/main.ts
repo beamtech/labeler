@@ -103,6 +103,7 @@ async function run() {
       await removeLabels(client, prNumber, labelsToRemove);
     }
   } catch (error) {
+    console.log('there was an error here')
     core.error(error);
     core.setFailed(error.message);
   }

@@ -165,12 +165,22 @@ async function fetchContent(
     repoRef = github.context.sha,
   }: RemoteRepoDetails = {}
 ): Promise<string> {
-  const response: any = await client.repos.getContents({
+  console.log('fetching', {
     owner: repoOwner,
     repo: repoName,
     path: repoPath,
     ref: repoRef,
-  });
+  })
+  try {
+    const response: any = await client.repos.getContents({
+      owner: repoOwner,
+      repo: repoName,
+      path: repoPath,
+      ref: repoRef,
+    });
+  } catch (e) {
+    console.log('error fetching', e)
+  }
 
   return Buffer.from(response.data.content, response.data.encoding).toString();
 }

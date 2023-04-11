@@ -19,6 +19,8 @@ type StringOrMatchConfig = string | MatchConfig;
 const uniq = (arr) => [...new Set(arr)];
 
 async function run() {
+  core.debug(`got this far`);
+  console.log('got this far regular log')
   try {
     const token = core.getInput("repo-token", { required: true });
     const sharedConfigsToken = core.getInput("shared-configurations-token", { required: false }) || token;
